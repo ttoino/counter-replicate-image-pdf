@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# Dependencies: fpdf, pillow (use pip to install)
-from PIL import Image, ImageDraw, ImageFont
+# Dependencies: fpdf
 from fpdf import FPDF
 import os
 
@@ -18,29 +17,15 @@ def cleanup_out(remove_pdf=True):
         os.remove(f"{OUT_PATH}/{file}")
 
 
-def draw_text(img_path, text, font, color, xs, ys):
-    img = Image.open(f"{IMAGES_PATH}/{img_path}").convert("RGB")
-    draw = ImageDraw.Draw(img)
-    for x, y in zip(xs, ys):
-        draw.text((x, y), text, font=font, fill=color)
-    return img
-
-
 if __name__ == "__main__":
     ######### PROGRAM BEHAVIOR #########
     path = "car.jpg"
-    xs = [50, 150]
-    ys = [50, 150]
-    font_size = 80
-
-    try:
-        font = ImageFont.truetype(f"{FONTS_PATH}/arial.ttf", font_size)
-    except OSError:
-        print("Font not found. Using default font.")
-        font = ImageFont.load_default()
-
-    color = "black"
-    no_images = 100
+    xs = [10, 30]
+    ys = [10, 30]
+    font_size = 10
+    font = "Arial"
+    color = (0, 0, 0)
+    no_images = 1000
     img_width = 140
     img_height = 70
     imgs_per_row = 2
@@ -64,11 +49,9 @@ if __name__ == "__main__":
     image_name = path[:path.index('.')]
     image_ext = path[path.index('.') + 1:]
     pdf = FPDF('P' if not landscape else 'L', 'mm', 'A4')
-
-    for i in range(no_images):
-        print(f"Generating image {i+1}...")
-        img = draw_text(path, f"{i+1:0>4}", font, "black", xs, ys)
-        img.save(f"{OUT_PATH}/{image_name}_{i+1:0>4}.{image_ext}")
+    pdf.set_font(font)
+    pdf.set_font_size(font_size)
+    pdf.set_text_color(*color)
 
     counter = 0
     page_counter = 0
@@ -81,12 +64,15 @@ if __name__ == "__main__":
             curr_gap_x = margin_x
             for j in range(imgs_per_row):
                 if counter < no_images:
-                    pdf.image(
-                        f"{OUT_PATH}/{image_name}_{counter+1:0>4}.{image_ext}",
-                        x=j * img_width + curr_gap_x,
-                        y=i * img_height + curr_gap_y,
-                        w=img_width,
-                        h=img_height)
+                    pdf.image(f"{IMAGES_PATH}/{image_name}.{image_ext}",
+                              x=j * img_width + curr_gap_x,
+                              y=i * img_height + curr_gap_y,
+                              w=img_width,
+                              h=img_height)
+                    for tx, ty in zip(xs, ys):
+                        pdf.text(j * img_width + curr_gap_x + tx,
+                                 i * img_height + curr_gap_y + ty,
+                                 f"{counter+1:0>4}")
                     counter += 1
                     curr_gap_x += gap_x
             curr_gap_y += gap_y

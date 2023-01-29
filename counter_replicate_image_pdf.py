@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Dependencies: fpdf, pillow (use pip to install)
 from PIL import Image, ImageDraw, ImageFont
 from fpdf import FPDF
@@ -17,18 +18,19 @@ def cleanup_out(remove_pdf=True):
         os.remove(f"{OUT_PATH}/{file}")
 
 
-def draw_text(img_path, text, font, color, x, y):
+def draw_text(img_path, text, font, color, xs, ys):
     img = Image.open(f"{IMAGES_PATH}/{img_path}").convert("RGB")
     draw = ImageDraw.Draw(img)
-    draw.text((x, y), text, font=font, fill=color)
+    for x, y in zip(xs, ys):
+        draw.text((x, y), text, font=font, fill=color)
     return img
 
 
 if __name__ == "__main__":
-    ######### PROGRAM BEHAVIOUR #########
+    ######### PROGRAM BEHAVIOR #########
     path = "car.jpg"
-    x = 50
-    y = 50
+    xs = [50, 150]
+    ys = [50, 150]
     font_size = 80
 
     try:
@@ -38,14 +40,16 @@ if __name__ == "__main__":
         font = ImageFont.load_default()
 
     color = "black"
-    no_images = 30
+    no_images = 100
     img_width = 140
     img_height = 70
     imgs_per_row = 2
     rows_per_page = 3
     landscape = True
-    gap_y = 2
-    gap_x = 2
+    margin_y = 1
+    margin_x = 8
+    gap_y = 1
+    gap_x = 1
     cleanup_out_on_start = True
     cleanup_out_on_end = True
     #####################################
@@ -60,27 +64,29 @@ if __name__ == "__main__":
     image_name = path[:path.index('.')]
     image_ext = path[path.index('.') + 1:]
     pdf = FPDF('P' if not landscape else 'L', 'mm', 'A4')
-    images = []
 
     for i in range(no_images):
         print(f"Generating image {i+1}...")
-        img = draw_text(path, f"{i+1}", font, "black", x, y)
-        images.append(img)
-        img.save(f"{OUT_PATH}/{image_name}_{i+1}.{image_ext}")
+        img = draw_text(path, f"{i+1:0>4}", font, "black", xs, ys)
+        img.save(f"{OUT_PATH}/{image_name}_{i+1:0>4}.{image_ext}")
 
     counter = 0
     page_counter = 0
-    while counter < len(images):
+    while counter < no_images:
         page_counter += 1
         print(f"Writing page {page_counter}...")
         pdf.add_page()
-        curr_gap_y = 0
+        curr_gap_y = margin_y
         for i in range(rows_per_page):
-            curr_gap_x = 0
+            curr_gap_x = margin_x
             for j in range(imgs_per_row):
-                if counter < len(images):
-                    pdf.image(f"{OUT_PATH}/{image_name}_{counter+1}.{image_ext}",
-                              x=j*img_width + curr_gap_x, y=i*img_height + curr_gap_y, w=img_width, h=img_height)
+                if counter < no_images:
+                    pdf.image(
+                        f"{OUT_PATH}/{image_name}_{counter+1:0>4}.{image_ext}",
+                        x=j * img_width + curr_gap_x,
+                        y=i * img_height + curr_gap_y,
+                        w=img_width,
+                        h=img_height)
                     counter += 1
                     curr_gap_x += gap_x
             curr_gap_y += gap_y
